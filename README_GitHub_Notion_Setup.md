@@ -39,23 +39,25 @@ function doPost(e) {
     const postData = JSON.parse(e.postData.contents);
     const method = postData.method; // "QR_SCAN" or "MANUAL"
     
+    let personName = "Unknown";
     let email = "";
     let teamName = "Manual Entry";
     
     if (method === "QR_SCAN") {
-      const payload = postData.payload; // format: email|team_name|signature
+      const payload = postData.payload; // format: person_name|email|team_name|signature
       const parts = payload.split('|');
       
-      if (parts.length !== 3) {
-        return ContentService.createTextOutput(JSON.stringify({success: false, error: "QR غير صالح!"})).setMimeType(ContentService.MimeType.JSON);
+      if (parts.length !== 4) {
+        return ContentService.createTextOutput(JSON.stringify({success: false, error: "QR غير صالح! تأكد من تحديث الكيو ار."})).setMimeType(ContentService.MimeType.JSON);
       }
       
-      email = parts[0];
-      teamName = parts[1];
-      const providedSignature = parts[2];
+      personName = parts[0];
+      email = parts[1];
+      teamName = parts[2];
+      const providedSignature = parts[3];
       
       // Verify HMAC Signature to prevent spoofing
-      const dataToSign = email + "|" + teamName;
+      const dataToSign = personName + "|" + email + "|" + teamName;
       const expectedSignature = computeHMAC(SECRET_KEY, dataToSign);
       
       if (providedSignature !== expectedSignature) {
@@ -68,14 +70,14 @@ function doPost(e) {
     
     // Log to the Google Sheet (for backup)
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    sheet.appendRow([new Date(), email, teamName, method]);
+    sheet.appendRow([new Date(), personName, email, teamName, method]);
     
     // --- PUSH TO NOTION ---
     // Make sure updateNotion returns the success object
     const notionResult = updateNotion(email);
     
     if (notionResult.success) {
-      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({success: true, personName: personName, teamName: teamName})).setMimeType(ContentService.MimeType.JSON);
     } else {
       return ContentService.createTextOutput(JSON.stringify({success: false, error: notionResult.error})).setMimeType(ContentService.MimeType.JSON);
     }
