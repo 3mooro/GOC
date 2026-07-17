@@ -233,26 +233,28 @@
             loader.style.display = 'block';
             resultBox.style.display = 'none';
 
-            // Send to Google Apps Script
+            // Send to Google Apps Script using text/plain to avoid CORS preflight errors
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Use no-cors to avoid strict CORS errors with Google Scripts
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ 
                     payload: payload, 
                     method: method 
                 })
             })
-            .then(() => {
-                // Because of no-cors, we can't read the exact JSON response.
-                // We assume success if the fetch completes.
+            .then(response => response.json())
+            .then(data => {
                 loader.style.display = 'none';
-                showMessage(`<strong>✅ Logged successfully!</strong><br>Data sent to proxy.`, true);
+                if (data.success) {
+                    showMessage(`<strong>✅ Approved!</strong><br>Successfully logged.`, true);
+                } else {
+                    showMessage(`<strong>❌ Denied!</strong><br>${data.error}`, false);
+                }
                 
                 setTimeout(() => {
                     isScanning = false;
                     if(html5QrcodeScanner) html5QrcodeScanner.resume();
-                }, 2000);
+                }, 3000);
             })
             .catch(err => {
                 loader.style.display = 'none';
@@ -260,7 +262,7 @@
                 setTimeout(() => {
                     isScanning = false;
                     if(html5QrcodeScanner) html5QrcodeScanner.resume();
-                }, 2000);
+                }, 3000);
             });
         }
 

@@ -28,6 +28,13 @@ const NOTION_DATABASE_ID = "YOUR_NOTION_DATABASE_ID_HERE";
 
 // This function receives the POST request from your GitHub Pages scanner
 function doPost(e) {
+  // Setup CORS headers to allow GitHub Pages to read the JSON response
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
+
   try {
     const postData = JSON.parse(e.postData.contents);
     const method = postData.method; // "QR_SCAN" or "MANUAL"
@@ -40,7 +47,7 @@ function doPost(e) {
       const parts = payload.split('|');
       
       if (parts.length !== 3) {
-        return ContentService.createTextOutput(JSON.stringify({success: false, error: "Invalid format"})).setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(JSON.stringify({success: false, error: "QR غير صالح!"})).setMimeType(ContentService.MimeType.JSON);
       }
       
       email = parts[0];
@@ -52,7 +59,7 @@ function doPost(e) {
       const expectedSignature = computeHMAC(SECRET_KEY, dataToSign);
       
       if (providedSignature !== expectedSignature) {
-        return ContentService.createTextOutput(JSON.stringify({success: false, error: "Signature mismatch! Fake QR Code."})).setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(JSON.stringify({success: false, error: "توقيع غير مطابق! QR مزيف."})).setMimeType(ContentService.MimeType.JSON);
       }
     } else {
       // Manual Entry
@@ -64,10 +71,14 @@ function doPost(e) {
     sheet.appendRow([new Date(), email, teamName, method]);
     
     // --- PUSH TO NOTION ---
-    // Example fetch to Notion API to mark attendance
-    updateNotion(email);
+    // Make sure updateNotion returns the success object
+    const notionResult = updateNotion(email);
     
-    return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+    if (notionResult.success) {
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+    } else {
+      return ContentService.createTextOutput(JSON.stringify({success: false, error: notionResult.error})).setMimeType(ContentService.MimeType.JSON);
+    }
     
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({success: false, error: error.toString()})).setMimeType(ContentService.MimeType.JSON);
@@ -75,25 +86,82 @@ function doPost(e) {
 }
 
 // Function to update Notion via API
-function updateNotion(email) {
-  const url = 'https://api.notion.com/v1/pages'; // or /databases/{db_id}/query to find the page first
+function updateNotion(userEmail) {
+  const queryUrl = 'https://api.notion.com/v1/databases/' + NOTION_DATABASE_ID + '/query';
   
-  // NOTE: In a real scenario, you usually Query the DB to find the Page ID using the email, 
-  // then send a PATCH request to that Page ID to update the "Attendance" property.
-  // This is a placeholder for your specific Notion architecture.
-  
-  /* Example:
-  const options = {
-    method: 'post',
-    headers: {
-      'Authorization': 'Bearer ' + NOTION_API_KEY,
-      'Notion-Version': '2022-06-28',
-      'Content-Type': 'application/json'
-    },
-    payload: JSON.stringify({ ... })
+  const headers = {
+    'Authorization': 'Bearer ' + NOTION_API_KEY,
+    'Notion-Version': '2022-06-28',
+    'Content-Type': 'application/json'
   };
-  UrlFetchApp.fetch(url, options);
-  */
+
+  const queryPayload = {
+    "filter": {
+      "property": "Email", 
+      "email": {
+        "equals": userEmail
+      }
+    }
+  };
+
+  const queryOptions = {
+    'method': 'post',
+    'headers': headers,
+    'payload': JSON.stringify(queryPayload),
+    'muteHttpExceptions': true
+  };
+  
+  const queryResponse = UrlFetchApp.fetch(queryUrl, queryOptions);
+  const queryData = JSON.parse(queryResponse.getContentText());
+  
+  // 1. لو الإيميل مش موجود أصلاً في نوشن
+  if (!queryData.results || queryData.results.length === 0) {
+    return { success: false, error: "الإيميل ده مش متسجل في نوشن!" };
+  }
+  
+  const page = queryData.results[0];
+  const pageId = page.id;
+  
+  // 2. لو هو حضر قبل كده متعلم عليه (Done)
+  // تأكد إن اسم عمود الحالة عندك Status بالظبط أو غيره في الكود تحت
+  let currentStatus = "";
+  try {
+    currentStatus = page.properties["Status"].status.name;
+  } catch(e) {
+    // In case the status is empty or property name is wrong
+  }
+
+  if (currentStatus === "Done") {
+    return { success: false, error: "الشخص ده سجل حضور قبل كده بالفعل!" };
+  }
+    
+  // 3. تحديث خانة الـ Status عشان نأكد حضوره
+  const updateUrl = 'https://api.notion.com/v1/pages/' + pageId;
+  const updatePayload = {
+    "properties": {
+      "Status": {
+        "status": {
+          "name": "Done" 
+        }
+      }
+    }
+  };
+  
+  const updateOptions = {
+    'method': 'patch',
+    'headers': headers,
+    'payload': JSON.stringify(updatePayload),
+    'muteHttpExceptions': true
+  };
+  
+  const updateResponse = UrlFetchApp.fetch(updateUrl, updateOptions);
+  const updateData = JSON.parse(updateResponse.getContentText());
+  
+  if (updateData.id) {
+    return { success: true };
+  } else {
+    return { success: false, error: "خطأ في تعديل نوشن: " + updateData.message };
+  }
 }
 
 // Utility function to compute HMAC SHA256 in Apps Script
