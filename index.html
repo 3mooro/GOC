@@ -3,235 +3,422 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOC 5.0 - The Final Check-in</title>
-    <!-- Include Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Include HTML5 QR Code -->
+    <title>Game of Coders 5.0 - Attendance</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
-            --gold: #b8860b;
-            --gold-light: #ffe16d;
-            --dark-bg: #0f131c;
-            --card-bg: #1c1f29;
-            --text-main: #dfe2ef;
-            --cyan: #00fbfb;
-            --red: #ffb4ab;
+            --primary: #c9a050; /* Golden */
+            --primary-glow: rgba(201, 160, 80, 0.5);
+            --bg-color: #0f1115; /* Deep dark */
+            --card-bg: #1a1d24;
+            --text: #e0e0e0;
+            --danger: #ff4757;
+            --success: #2ed573;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace; /* Pirate/Hacker feel */
         }
 
         body {
-            font-family: 'Courier Prime', monospace;
-            background-color: var(--dark-bg);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            background-image: radial-gradient(circle at center, #1c1f29 0%, #0f131c 100%);
-            min-height: 100vh;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(201, 160, 80, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(201, 160, 80, 0.05), transparent 25%);
+            color: var(--text);
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Subtle animated background grid */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1;
+            opacity: 0.5;
         }
 
         .container {
-            width: 100%;
-            max-width: 600px;
-            background-color: var(--card-bg);
+            background: var(--card-bg);
+            border: 2px solid var(--primary);
+            border-radius: 16px;
             padding: 30px;
-            border-radius: 12px;
-            border: 1px solid var(--gold);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(184, 134, 11, 0.1);
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 0 30px var(--primary-glow), inset 0 0 20px rgba(0,0,0,0.5);
+            text-align: center;
             position: relative;
             overflow: hidden;
         }
 
-        .container::before {
+        /* Top decorative line */
+        .container::after {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0;
             height: 4px;
-            background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .header img {
-            width: 80px;
-            margin-bottom: 10px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
         }
 
         h1 {
-            color: var(--gold-light);
-            font-size: 24px;
-            margin: 0;
+            color: var(--primary);
+            margin-bottom: 5px;
+            font-size: 1.8rem;
             text-transform: uppercase;
             letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(255, 225, 109, 0.3);
+            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 25px;
         }
 
-        /* Login Section */
-        #loginSection {
+        .stats-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(201, 160, 80, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(201, 160, 80, 0.2);
+        }
+
+        /* Login Screen */
+        #login-screen {
+            display: block;
+        }
+
+        input[type="password"], input[type="email"] {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 15px 0;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
             text-align: center;
         }
 
-        input {
-            width: calc(100% - 24px);
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 6px;
-            border: 1px solid #4d4732;
-            background-color: #0c1018;
-            color: white;
-            font-family: 'Courier Prime', monospace;
+        input[type="password"]:focus, input[type="email"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
         }
 
         button {
             width: 100%;
-            padding: 14px;
-            background-color: var(--gold);
-            color: #0f131c;
+            padding: 12px;
+            background: linear-gradient(45deg, #a67c00, #ffbf00);
+            color: #111;
             border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            font-family: 'Courier Prime', monospace;
+            border-radius: 8px;
             font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(201, 160, 80, 0.4);
         }
 
         button:hover {
-            background-color: var(--gold-light);
-            box-shadow: 0 0 15px rgba(255, 225, 109, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(201, 160, 80, 0.6);
         }
 
-        /* Scanner Section */
-        #scannerSection {
+        /* App Screen */
+        #app-screen {
             display: none;
         }
 
         #reader {
             width: 100%;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
+            border: 2px solid #333;
+            background: black;
             margin-bottom: 20px;
-            border: 2px dashed var(--gold);
+            position: relative;
+        }
+        
+        #reader video {
+            object-fit: cover;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: #111;
+        }
+
+        #manual-entry {
+            display: none;
+            animation: fadeIn 0.3s ease;
         }
 
         .result-box {
+            margin-top: 20px;
             padding: 15px;
             border-radius: 8px;
-            margin-bottom: 20px;
             display: none;
-            text-align: center;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 1.1rem;
+            animation: slideUp 0.4s ease;
+            position: relative;
         }
 
-        .success { background-color: rgba(34, 197, 94, 0.2); border: 1px solid #4ade80; color: #4ade80; }
-        .error { background-color: rgba(239, 68, 68, 0.2); border: 1px solid #f87171; color: #f87171; }
-
-        .manual-entry {
-            border-top: 1px dashed #4d4732;
-            padding-top: 20px;
-            margin-top: 20px;
+        .result-success {
+            background: rgba(46, 213, 115, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+            box-shadow: 0 0 15px rgba(46, 213, 115, 0.2);
         }
 
-        .manual-entry h3 {
-            color: var(--cyan);
-            font-size: 16px;
-            margin-top: 0;
+        .result-error {
+            background: rgba(255, 71, 87, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            box-shadow: 0 0 15px rgba(255, 71, 87, 0.2);
         }
 
-        /* Loading Spinner */
         .loader {
             display: none;
-            border: 4px solid #0c1018;
-            border-top: 4px solid var(--gold-light);
+            margin: 20px auto;
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(201, 160, 80, 0.3);
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 10px auto;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
         }
 
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .footer {
+            margin-top: 25px;
+            font-size: 0.8rem;
+            color: #666;
+            border-top: 1px solid #333;
+            padding-top: 15px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
 
     </style>
 </head>
 <body>
 
+    <!-- Audio Elements for UI Feedback -->
+    <audio id="success-sound" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
+    <audio id="error-sound" src="https://assets.mixkit.co/active_storage/sfx/2955/2955-preview.mp3" preload="auto"></audio>
+
     <div class="container">
-        <div class="header">
-            <img src="images/icon_anchor.png" alt="Anchor">
-            <h1>The Captain's Log</h1>
-            <p style="color: #94a3b8; font-size: 14px; margin-top: 5px;">GOC 5.0 Attendance Terminal</p>
+        <!-- Stats Badge (Hidden until login) -->
+        <div id="stats-badge" class="stats-badge" style="display: none;">Scanned: <span id="scan-count">0</span></div>
+
+        <h1>Game of Coders 5.0</h1>
+        <div class="subtitle">⚓ Official Attendance System ⚓</div>
+
+        <!-- Login Screen -->
+        <div id="login-screen">
+            <p style="margin-bottom: 15px; color: #aaa;">Enter captain's passcode to access scanner.</p>
+            <input type="password" id="password" placeholder="Passcode (e.g. 1234)" onkeypress="if(event.key === 'Enter') login()">
+            <button onclick="login()">Access System</button>
+            <p id="login-error" style="color: var(--danger); margin-top: 10px; display: none;">❌ Access Denied!</p>
         </div>
 
-        <!-- LOGIN SECTION -->
-        <div id="loginSection">
-            <input type="password" id="passkey" placeholder="Enter Captain's Passkey">
-            <button onclick="checkLogin()">Unlock Terminal</button>
-            <p id="loginError" style="color: var(--red); display: none; margin-top: 10px;">Incorrect passkey.</p>
-        </div>
-
-        <!-- SCANNER SECTION -->
-        <div id="scannerSection">
-            <div id="resultBox" class="result-box"></div>
-            <div class="loader" id="loader"></div>
-            
-            <div id="reader"></div>
-            
-            <div class="manual-entry">
-                <h3>Manual Fallback</h3>
-                <input type="email" id="manualEmail" placeholder="Crew member email">
-                <button onclick="submitManual()">Force Log Entry</button>
+        <!-- App Screen -->
+        <div id="app-screen">
+            <div class="tabs">
+                <div class="tab active" id="tab-scan" onclick="switchTab('scan')">📷 QR Scanner</div>
+                <div class="tab" id="tab-manual" onclick="switchTab('manual')">⌨️ Manual Entry</div>
             </div>
+
+            <!-- Scanner Section -->
+            <div id="scanner-section">
+                <div id="reader"></div>
+            </div>
+
+            <!-- Manual Entry Section -->
+            <div id="manual-entry">
+                <input type="email" id="manual-email" placeholder="Enter participant email">
+                <button onclick="submitManual()">Submit Attendance</button>
+            </div>
+
+            <div class="loader" id="loader"></div>
+            <div class="result-box" id="result-box"></div>
+        </div>
+
+        <div class="footer">
+            Secured by HMAC-SHA256 & Notion API Proxy
         </div>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
-        // REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5GN9uUVYEObdYfAXsuzbvx7pj3kh_y5RV-LlGybUygns8WYOH6WIzdA_f11JRzg_D/exec';
-        
-        // Simple client-side protection (Not highly secure, but prevents random visitors)
-        const TERMINAL_PASSKEY = "goc2026"; 
-
-        const loginSection = document.getElementById('loginSection');
-        const scannerSection = document.getElementById('scannerSection');
-        const resultBox = document.getElementById('resultBox');
-        const loader = document.getElementById('loader');
+        // ==========================================
+        // CONFIGURATION
+        // ==========================================
+        // UPDATE THIS URL TO YOUR PUBLISHED GOOGLE APPS SCRIPT WEB APP URL
+        const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE"; 
         
         let html5QrcodeScanner = null;
         let isScanning = false;
+        let scanCount = 0;
 
-        function checkLogin() {
-            const pk = document.getElementById('passkey').value;
-            if (pk === TERMINAL_PASSKEY) {
-                loginSection.style.display = 'none';
-                scannerSection.style.display = 'block';
+        // Sounds
+        const sndSuccess = document.getElementById('success-sound');
+        const sndError = document.getElementById('error-sound');
+
+        // Simple login (Change "1234" to your desired password)
+        function login() {
+            const pwd = document.getElementById('password').value;
+            if (pwd === "1234") {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-screen').style.animation = 'fadeIn 0.5s ease';
+                document.getElementById('app-screen').style.display = 'block';
+                document.getElementById('stats-badge').style.display = 'block';
                 startScanner();
             } else {
-                document.getElementById('loginError').style.display = 'block';
+                document.getElementById('login-error').style.display = 'block';
             }
         }
 
-        function showMessage(msg, isSuccess) {
+        function switchTab(tab) {
+            document.getElementById('tab-scan').classList.remove('active');
+            document.getElementById('tab-manual').classList.remove('active');
+            
+            if (tab === 'scan') {
+                document.getElementById('tab-scan').classList.add('active');
+                document.getElementById('manual-entry').style.display = 'none';
+                document.getElementById('scanner-section').style.display = 'block';
+                if(html5QrcodeScanner && !isScanning) html5QrcodeScanner.resume();
+            } else {
+                document.getElementById('tab-manual').classList.add('active');
+                document.getElementById('scanner-section').style.display = 'none';
+                document.getElementById('manual-entry').style.display = 'block';
+                if(html5QrcodeScanner) html5QrcodeScanner.pause(true);
+            }
+            document.getElementById('result-box').style.display = 'none';
+        }
+
+        function startScanner() {
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+                fps: 10, 
+                qrbox: {width: 250, height: 250},
+                aspectRatio: 1.0
+            });
+            
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            if (isScanning) return;
+            isScanning = true;
+            html5QrcodeScanner.pause(true); // Pause scanning while processing
+
+            // Play a soft beep when code is recognized (before server response)
+            let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let oscillator = audioCtx.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+            oscillator.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+
+            // Expecting: personName|email|team_name|signature
+            const parts = decodedText.split('|');
+            let scannedName = "Unknown";
+            
+            if(parts.length === 4) {
+                scannedName = parts[0];
+            } else if (parts.length === 3) {
+                // Fallback for old QR codes
+                scannedName = parts[0].split('@')[0]; 
+            }
+            
+            const resultBox = document.getElementById('result-box');
+            resultBox.className = 'result-box';
             resultBox.style.display = 'block';
-            resultBox.className = 'result-box ' + (isSuccess ? 'success' : 'error');
-            resultBox.innerHTML = msg;
+            resultBox.style.background = 'rgba(201, 160, 80, 0.1)';
+            resultBox.style.color = 'var(--primary)';
+            resultBox.style.border = '1px solid var(--primary)';
+            resultBox.innerHTML = `⏳ <strong>Verifying...</strong><br>${scannedName}`;
+
+            sendToProxy(decodedText, "QR_SCAN");
+        }
+
+        function onScanFailure(error) {
+            // ignore constant failures while looking for QR
+        }
+
+        function submitManual() {
+            const email = document.getElementById('manual-email').value;
+            if (!email) {
+                alert("Please enter an email!");
+                return;
+            }
+            sendToProxy(email, "MANUAL");
+        }
+
+        function showMessage(html, isSuccess) {
+            const box = document.getElementById('result-box');
+            box.className = 'result-box ' + (isSuccess ? 'result-success' : 'result-error');
+            box.innerHTML = html;
+            box.style.display = 'block';
             
             if(isSuccess) {
-                setTimeout(() => { resultBox.style.display = 'none'; }, 4000);
+                sndSuccess.currentTime = 0;
+                sndSuccess.play().catch(e=>console.log(e));
+                scanCount++;
+                document.getElementById('scan-count').innerText = scanCount;
+            } else {
+                sndError.currentTime = 0;
+                sndError.play().catch(e=>console.log(e));
             }
         }
 
         function sendToProxy(payload, method) {
+            const loader = document.getElementById('loader');
             loader.style.display = 'block';
-            resultBox.style.display = 'none';
 
             // Send to Google Apps Script using text/plain to avoid CORS preflight errors
             fetch(GOOGLE_SCRIPT_URL, {
@@ -245,60 +432,40 @@
             .then(response => response.json())
             .then(data => {
                 loader.style.display = 'none';
+                
                 if (data.success) {
-                    showMessage(`<strong>✅ Approved!</strong><br>Successfully logged.`, true);
+                    let msg = `<strong>✅ Approved!</strong>`;
+                    if (data.personName) {
+                        msg += `<br><span style="font-size: 1.2rem; margin-top:5px; display:block;">Ahoy, <b>${data.personName}</b>! 🏴‍☠️</span>`;
+                    }
+                    if (data.teamName) {
+                        msg += `<br><small style="color:#aaa;">Team: ${data.teamName}</small>`;
+                    }
+                    showMessage(msg, true);
                 } else {
                     showMessage(`<strong>❌ Denied!</strong><br>${data.error}`, false);
                 }
                 
+                // Auto resume scanner after 3 seconds
                 setTimeout(() => {
+                    document.getElementById('result-box').style.display = 'none';
                     isScanning = false;
-                    if(html5QrcodeScanner) html5QrcodeScanner.resume();
-                }, 3000);
+                    if(document.getElementById('tab-scan').classList.contains('active')) {
+                        if(html5QrcodeScanner) html5QrcodeScanner.resume();
+                    }
+                }, 4000);
             })
             .catch(err => {
                 loader.style.display = 'none';
                 showMessage(`<strong>❌ Network Error!</strong><br>Check connection or Script URL.`, false);
                 setTimeout(() => {
+                    document.getElementById('result-box').style.display = 'none';
                     isScanning = false;
-                    if(html5QrcodeScanner) html5QrcodeScanner.resume();
+                    if(document.getElementById('tab-scan').classList.contains('active')) {
+                        if(html5QrcodeScanner) html5QrcodeScanner.resume();
+                    }
                 }, 3000);
             });
-        }
-
-        function onScanSuccess(decodedText, decodedResult) {
-            if (isScanning) return;
-            isScanning = true;
-            html5QrcodeScanner.pause();
-            
-            // Expected format: email|team_name|signature
-            const parts = decodedText.split('|');
-            if(parts.length === 3) {
-                sendToProxy(decodedText, "QR_SCAN");
-            } else {
-                showMessage(`<strong>❌ Invalid QR!</strong><br>Not a GOC 5.0 Ticket.`, false);
-                setTimeout(() => {
-                    isScanning = false;
-                    html5QrcodeScanner.resume();
-                }, 2000);
-            }
-        }
-
-        function submitManual() {
-            const email = document.getElementById('manualEmail').value;
-            if(!email) return alert("Enter an email.");
-            if (isScanning) return;
-            
-            isScanning = true;
-            if(html5QrcodeScanner) html5QrcodeScanner.pause();
-            
-            sendToProxy(email, "MANUAL");
-            document.getElementById('manualEmail').value = "";
-        }
-
-        function startScanner() {
-            html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-            html5QrcodeScanner.render(onScanSuccess);
         }
     </script>
 </body>
