@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOC 5.0 - The Final Check-in</title>
+    <!-- Include Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Include HTML5 QR Code -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        :root {
+            --gold: #b8860b;
+            --gold-light: #ffe16d;
+            --dark-bg: #0f131c;
+            --card-bg: #1c1f29;
+            --text-main: #dfe2ef;
+            --cyan: #00fbfb;
+            --red: #ffb4ab;
+        }
+
+        body {
+            font-family: 'Courier Prime', monospace;
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            background-image: radial-gradient(circle at center, #1c1f29 0%, #0f131c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--gold);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(184, 134, 11, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header img {
+            width: 80px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: var(--gold-light);
+            font-size: 24px;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 225, 109, 0.3);
+        }
+
+        /* Login Section */
+        #loginSection {
+            text-align: center;
+        }
+
+        input {
+            width: calc(100% - 24px);
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border: 1px solid #4d4732;
+            background-color: #0c1018;
+            color: white;
+            font-family: 'Courier Prime', monospace;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--gold);
+            color: #0f131c;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-family: 'Courier Prime', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background-color: var(--gold-light);
+            box-shadow: 0 0 15px rgba(255, 225, 109, 0.4);
+        }
+
+        /* Scanner Section */
+        #scannerSection {
+            display: none;
+        }
+
+        #reader {
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 2px dashed var(--gold);
+        }
+
+        .result-box {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .success { background-color: rgba(34, 197, 94, 0.2); border: 1px solid #4ade80; color: #4ade80; }
+        .error { background-color: rgba(239, 68, 68, 0.2); border: 1px solid #f87171; color: #f87171; }
+
+        .manual-entry {
+            border-top: 1px dashed #4d4732;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        .manual-entry h3 {
+            color: var(--cyan);
+            font-size: 16px;
+            margin-top: 0;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            display: none;
+            border: 4px solid #0c1018;
+            border-top: 4px solid var(--gold-light);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <img src="images/icon_anchor.png" alt="Anchor">
+            <h1>The Captain's Log</h1>
+            <p style="color: #94a3b8; font-size: 14px; margin-top: 5px;">GOC 5.0 Attendance Terminal</p>
+        </div>
+
+        <!-- LOGIN SECTION -->
+        <div id="loginSection">
+            <input type="password" id="passkey" placeholder="Enter Captain's Passkey">
+            <button onclick="checkLogin()">Unlock Terminal</button>
+            <p id="loginError" style="color: var(--red); display: none; margin-top: 10px;">Incorrect passkey.</p>
+        </div>
+
+        <!-- SCANNER SECTION -->
+        <div id="scannerSection">
+            <div id="resultBox" class="result-box"></div>
+            <div class="loader" id="loader"></div>
+            
+            <div id="reader"></div>
+            
+            <div class="manual-entry">
+                <h3>Manual Fallback</h3>
+                <input type="email" id="manualEmail" placeholder="Crew member email">
+                <button onclick="submitManual()">Force Log Entry</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
+        const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE';
+        
+        // Simple client-side protection (Not highly secure, but prevents random visitors)
+        const TERMINAL_PASSKEY = "goc2026"; 
+
+        const loginSection = document.getElementById('loginSection');
+        const scannerSection = document.getElementById('scannerSection');
+        const resultBox = document.getElementById('resultBox');
+        const loader = document.getElementById('loader');
+        
+        let html5QrcodeScanner = null;
+        let isScanning = false;
+
+        function checkLogin() {
+            const pk = document.getElementById('passkey').value;
+            if (pk === TERMINAL_PASSKEY) {
+                loginSection.style.display = 'none';
+                scannerSection.style.display = 'block';
+                startScanner();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        function showMessage(msg, isSuccess) {
+            resultBox.style.display = 'block';
+            resultBox.className = 'result-box ' + (isSuccess ? 'success' : 'error');
+            resultBox.innerHTML = msg;
+            
+            if(isSuccess) {
+                setTimeout(() => { resultBox.style.display = 'none'; }, 4000);
+            }
+        }
+
+        function sendToProxy(payload, method) {
+            loader.style.display = 'block';
+            resultBox.style.display = 'none';
+
+            // Send to Google Apps Script
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Use no-cors to avoid strict CORS errors with Google Scripts
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    payload: payload, 
+                    method: method 
+                })
+            })
+            .then(() => {
+                // Because of no-cors, we can't read the exact JSON response.
+                // We assume success if the fetch completes.
+                loader.style.display = 'none';
+                showMessage(`<strong>✅ Logged successfully!</strong><br>Data sent to proxy.`, true);
+                
+                setTimeout(() => {
+                    isScanning = false;
+                    if(html5QrcodeScanner) html5QrcodeScanner.resume();
+                }, 2000);
+            })
+            .catch(err => {
+                loader.style.display = 'none';
+                showMessage(`<strong>❌ Network Error!</strong><br>Check connection or Script URL.`, false);
+                setTimeout(() => {
+                    isScanning = false;
+                    if(html5QrcodeScanner) html5QrcodeScanner.resume();
+                }, 2000);
+            });
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            if (isScanning) return;
+            isScanning = true;
+            html5QrcodeScanner.pause();
+            
+            // Expected format: email|team_name|signature
+            const parts = decodedText.split('|');
+            if(parts.length === 3) {
+                sendToProxy(decodedText, "QR_SCAN");
+            } else {
+                showMessage(`<strong>❌ Invalid QR!</strong><br>Not a GOC 5.0 Ticket.`, false);
+                setTimeout(() => {
+                    isScanning = false;
+                    html5QrcodeScanner.resume();
+                }, 2000);
+            }
+        }
+
+        function submitManual() {
+            const email = document.getElementById('manualEmail').value;
+            if(!email) return alert("Enter an email.");
+            if (isScanning) return;
+            
+            isScanning = true;
+            if(html5QrcodeScanner) html5QrcodeScanner.pause();
+            
+            sendToProxy(email, "MANUAL");
+            document.getElementById('manualEmail').value = "";
+        }
+
+        function startScanner() {
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+            html5QrcodeScanner.render(onScanSuccess);
+        }
+    </script>
+</body>
+</html>
